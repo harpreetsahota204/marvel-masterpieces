@@ -4,6 +4,14 @@ import fiftyone as fo
 from dataclasses import dataclass
 from typing import List, Dict
 
+from fiftyone.utils.huggingface import load_from_hub
+
+dataset = load_from_hub(
+    "harpreetsahota/marvel-masterpieces",
+    name="marvel-masterpieces",
+    overwrite=True
+    )
+
 @dataclass
 class FileLocations:
     """
