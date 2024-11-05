@@ -16,11 +16,11 @@ dataset = load_from_hub(
 class FileLocations:
     """
     Manages file paths for processing 3D meshes and masks.
-    
+
     Attributes:
         output_dir (str): Directory where all output files will be saved
         subdirectory (str): Temporary subdirectory for initial file creation, defaults to "0"
-    
+
     Example:
         >>> locations = FileLocations("meshes_masks")
         >>> paths = locations.get_paths("sample_123")
@@ -29,14 +29,14 @@ class FileLocations:
     """
     output_dir: str
     subdirectory: str = "0"
-    
+
     def get_paths(self, sample_id: str) -> Dict[str, str]:
         """
         Generate all necessary file paths for a given sample.
-        
+
         Args:
             sample_id (str): Unique identifier for the sample
-            
+
         Returns:
             dict: Dictionary containing paths for:
                 - original_mask: Initial mask file location
@@ -44,7 +44,7 @@ class FileLocations:
                 - original_mesh: Initial mesh file location
                 - target_mesh: Final mesh file location
                 - scene_path: Path for the 3D scene file
-                
+
         Example:
             >>> locations = FileLocations("meshes_masks")
             >>> paths = locations.get_paths("sample_123")
@@ -62,13 +62,13 @@ class FileLocations:
 def create_dataset(name: str) -> fo.Dataset:
     """
     Initialize a new FiftyOne dataset with group field support.
-    
+
     Args:
         name (str): Name of the dataset to create
-        
+
     Returns:
         fo.Dataset: Newly created dataset with group field initialized
-        
+
     Example:
         >>> dataset = create_dataset("my_reconstructions")
         >>> print(dataset.name)
@@ -81,11 +81,11 @@ def create_dataset(name: str) -> fo.Dataset:
 def move_files(paths: Dict[str, str]) -> None:
     """
     Move generated files from temporary subdirectory to main output directory.
-    
+
     Args:
         paths (dict): Dictionary containing original and target paths for mask and mesh files
                      Must include keys: 'original_mask', 'target_mask', 'original_mesh', 'target_mesh'
-    
+
     Example:
         >>> paths = {
         ...     'original_mask': 'meshes_masks/0/input.png',
@@ -101,15 +101,15 @@ def move_files(paths: Dict[str, str]) -> None:
 def create_sample(filepath: str, group_element: str, metadata: fo.Sample) -> fo.Sample:
     """
     Create a new FiftyOne sample with metadata copied from an existing sample.
-    
+
     Args:
         filepath (str): Path to the file associated with this sample
         group_element (str): Group identifier for the sample
         metadata (fo.Sample): Original sample containing metadata to copy
-        
+
     Returns:
         fo.Sample: New sample with copied metadata and specified filepath/group
-        
+
     Example:
         >>> original_sample = fo.Sample(filepath="image.jpg", pseudonym="hero", character="protagonist")
         >>> new_sample = create_sample("mask.png", "mask_group", original_sample)
@@ -126,18 +126,18 @@ def create_sample(filepath: str, group_element: str, metadata: fo.Sample) -> fo.
 def create_3d_scene(mesh_filename: str, scene_path: str, output_dir: str) -> None:
     """
     Create and save a 3D scene with a mesh and camera setup.
-    
+
     Args:
         mesh_filename (str): Filename of the mesh to include in the scene
         scene_path (str): Path where the scene file will be saved
         output_dir (str): Directory where the scene will be created
-        
+
     Example:
         >>> create_3d_scene("model.glb", "scene.fo3d", "output_directory")
     """
     scene = fo.Scene()
     scene.camera = fo.PerspectiveCamera(up="Y")
-    
+
     mesh = fo.GltfMesh("mesh", mesh_filename)
     mesh.rotation = fo.Euler(0, 180, 0, degrees=True)
     scene.add(mesh)
@@ -150,10 +150,10 @@ def create_3d_scene(mesh_filename: str, scene_path: str, output_dir: str) -> Non
 def cleanup_subdirectory(subdir: str) -> None:
     """
     Remove empty subdirectory if it exists.
-    
+
     Args:
         subdir (str): Path to the subdirectory to clean up
-        
+
     Example:
         >>> cleanup_subdirectory("meshes_masks/0")
     """
@@ -163,18 +163,18 @@ def cleanup_subdirectory(subdir: str) -> None:
 def process_samples(dataset: fo.Dataset, output_dir: str) -> None:
     """
     Process a dataset of samples to create masks, meshes, and 3D scenes.
-    
+
     This function performs the following steps for each sample:
     1. Runs external 3D reconstruction script
     2. Organizes output files
     3. Creates mask and mesh samples
     4. Generates 3D scenes
     5. Adds all samples to a new dataset
-    
+
     Args:
         dataset (fo.Dataset): Input dataset containing samples to process
         output_dir (str): Directory where all output files will be saved
-        
+
     Example:
         >>> input_dataset = fo.Dataset("input_data")
         >>> process_samples(input_dataset, "meshes_masks")
@@ -185,7 +185,7 @@ def process_samples(dataset: fo.Dataset, output_dir: str) -> None:
     for sample in dataset:
         # Run external script
         os.system(f"python /content/stable-fast-3d/run.py {sample.filepath} --output-dir {output_dir} --remesh_option quad")
-        
+
         paths = file_locations.get_paths(sample.id)
         move_files(paths)
 
@@ -199,7 +199,7 @@ def process_samples(dataset: fo.Dataset, output_dir: str) -> None:
 
         # Create 3D scene
         create_3d_scene(
-            os.path.basename(paths['target_mesh']), 
+            os.path.basename(paths['target_mesh']),
             paths['scene_path'],
             output_dir
         )
@@ -216,5 +216,5 @@ def process_samples(dataset: fo.Dataset, output_dir: str) -> None:
     return recon_dataset
 
 # Usage
-output_dir = "meshes_masks"
-recon_dataset = process_samples(dataset, output_dir)
+# output_dir = "meshes_masks"
+# recon_dataset = process_samples(dataset, output_dir)
